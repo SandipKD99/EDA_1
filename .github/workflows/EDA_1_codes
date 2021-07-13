@@ -1,0 +1,222 @@
+
+
+1. Understand the business requirement
+2. Data wrangling 
+3. Correlation analysis
+4. Data Visualization
+
+### Import libraries and read the data
+
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+df = pd.read_csv("marketing_data.csv")
+
+df.head()
+
+## **Column Details:**
+1. **ID:** Customer's Unique Identifier
+2. **Year_Birth:** Customer's Birth Year
+3. **Education:** Customer's education level
+4. **Marital_Status:** Customer's marital status
+5. **Income:** Customer's yearly household income
+6. **Kidhome:** Number of children in customer's household
+7. **Teenhome:** Number of teenagers in customer's household
+8. **Dt_Customer:** Date of customer's enrollment with the company
+9. **Recency:** Number of days since customer's last purchase
+10. **MntWines:** Amount spent on wine in the last 2 years
+11. **MntFruits:** Amount spent on fruits in the last 2 years
+12. **MntMeatProducts:** Amount spent on meat in the last 2 years
+13. **MntFishProducts:** Amount spent on fish in the last 2 years
+14. **MntSweetProducts:** Amount spent on sweets in the last 2 years
+15. **MntGoldProds:** Amount spent on gold in the last 2 years
+16. **NumDealsPurchases:** Number of purchases made with a discount
+17. **NumWebPurchases:** Number of purchases made through the company's web site
+18. **NumCatalogPurchases:** Number of purchases made using a catalogue
+19. **NumStorePurchases:** Number of purchases made directly in stores
+20. **NumWebVisitsMonth:** Number of visits to company's web site in the last month
+21. **AcceptedCmp1:** 1 if customer accepted the offer in the 1st campaign, 0 otherwise (Target variable)
+22. **AcceptedCmp2:** 1 if customer accepted the offer in the 2nd campaign, 0 otherwise (Target variable)
+23. **AcceptedCmp3:** 1 if customer accepted the offer in the 3rd campaign, 0 otherwise (Target variable)
+24. **AcceptedCmp4:** 1 if customer accepted the offer in the 4th campaign, 0 otherwise (Target variable)
+25. **AcceptedCmp5:** 1 if customer accepted the offer in the 5th campaign, 0 otherwise (Target variable)
+26. **Response:** 1 if customer accepted the offer in the last campaign, 0 otherwise (Target variable)
+27. **Complain:** 1 if customer complained in the last 2 years, 0 otherwise
+28. **Country:** Customer's location
+
+
+## **Data Wrangling**
+
+df.shape
+
+We have 2240 rows in the dataset. 
+
+df.head()
+
+df.info()  #pandas
+
+1. We see that column_name "Income" has a space before it's name that will create problems in further analysis, so we'll rename it.
+
+2. There looks a problem with 2 column's datatypes. 
+We need to change the datatype of "**Income**" column into **int64** so that it can be used for further calculations, and change the datatype of "**Dt_Customer**" into datetime.
+
+df.rename(columns={' Income ':'Income'},inplace=True)
+
+df["Dt_Customer"] = pd.to_datetime(df["Dt_Customer"], format='%m/%d/%y')  
+df["Income"] = df["Income"].str.replace("$","").str.replace(",","") 
+df["Income"] = df["Income"].astype(float)
+
+df.head()
+
+df.nunique() 
+
+We have data of 2240 unique Customers. No customer ID is repeated in the data. 
+
+### reomve IDs
+
+df.drop(['ID'],axis=1,inplace =True)
+
+### Check duplicates if any
+
+duplicate = df[df.duplicated(subset=None,keep='first')] 
+  
+print("Duplicate Rows :") 
+  
+# Print the resultant Dataframe 
+duplicate.shape 
+#duplicate
+
+df= df.drop_duplicates() 
+
+df.shape
+
+no duplicates present in the data
+
+### Handle missing values
+
+df.isnull().sum()
+
+We only have 24 missing values in the "**Income**" column.
+So, we first check the skewness of the column.
+If the data is symetrical, we use mean to impute the missing values, else we will use median.
+
+To check the skewness, let us plot the boxplot and histogram. 
+
+plt.figure(figsize=(15,5))
+plt.subplot(1,2,1)
+sns.boxplot(data = df["Income"])
+plt.subplot(1,2,2)
+sns.histplot(df["Income"])
+
+We can see that the distribution is rightly skewed. It has a lot of outliers towards the right and so, mean will not be a good imputation method as mean is sensitive to outliers. 
+
+df["Income"].fillna(value=df["Income"].median(),inplace=True)
+
+### Divide the dataframe into 3 sub dataframes: categorical string, categorical numerical, Numerical
+
+# split the dg --> two sub df 
+# 1. categorial -- > Numerical
+# 2. categorical -- > string -- > Chi Square test
+# 2. Numerical ---> box plot, histogram, scatter
+
+df_cat = df.loc[:,df.dtypes==np.object]
+
+df_cat.head()
+
+df_cat.shape
+
+cat_num = ['Kidhome', 'Teenhome', 'AcceptedCmp3', 'AcceptedCmp4', 'AcceptedCmp5', 'AcceptedCmp1',
+       'AcceptedCmp2', 'Response', 'Complain']
+
+df_cat_num = df[cat_num]
+
+
+
+
+df_cat_num['Kidhome'].value_counts()
+
+df_cat['Marital_Status'].value_counts()
+
+num = ['Year_Birth','Income','Dt_Customer', 'Recency', 'MntWines', 'MntFruits',
+       'MntMeatProducts', 'MntFishProducts', 'MntSweetProducts',
+       'MntGoldProds', 'NumDealsPurchases', 'NumWebPurchases',
+       'NumCatalogPurchases', 'NumStorePurchases', 'NumWebVisitsMonth']
+df_num = df[num]
+
+df_num.head()
+
+## Analysis Numerical Continuous variable
+
+df_num.describe()
+
+## Univariate Analysis
+
+### Outlier removal
+
+Let us now check if there are any outliers present in the dataset. 
+
+df_num = df_num.drop(['Dt_Customer'],axis=1)
+
+df_num.columns
+
+
+df_num.shape
+
+sns.boxplot(data = df_num['MntWines'])
+
+#### No need to remove as amount as can be increased to any level
+
+sns.boxplot(data = df_num['MntSweetProducts'])
+
+#### No need to remove as amount as can be increased to any level
+
+sns.boxplot(data = df_num['MntGoldProds'])
+
+#### No need to remove as amount as can be increased to any level
+
+sns.boxplot(data = df_num['MntSweetProducts'])
+
+#### No need to remove as amount as can be increased to any level
+
+sns.boxplot(data = df_num['MntFruits'])
+
+#### No need to remove as amount as can be increased to any level
+
+sns.boxplot(data = df_num['MntMeatProducts'])
+
+#### No need to remove as amount as can be increased to any level
+
+sns.boxplot(data = df_num['NumStorePurchases'])
+
+sns.boxplot(data = df_num['NumWebPurchases'])
+
+sns.boxplot(data = df_num['NumWebVisitsMonth'])
+
+sns.boxplot(data = df_num['NumCatalogPurchases'])
+
+sns.boxplot(data = df_num['NumDealsPurchases'])
+
+sns.boxplot(data = df_num['Income'])
+
+sns.boxplot(data = df_num['Year_Birth'])
+
+#### We need to remove it as it's not possible for a customer to have birth year less than 1900
+
+sns.boxplot(data = df_num['Recency'])
+
+Q1 = df_num['Year_Birth'].quantile(0.25)
+Q3 = df_num['Year_Birth'].quantile(0.75)
+IQR = Q3 - Q1
+print(Q1 )
+print(Q3 )
+
+df_num.shape
+
+df_num = df_num[~((df_num['Year_Birth'] < (Q1 - 1.5 * IQR)) |(df_num['Year_Birth'] > (Q3 + 1.5 * IQR)))]
+
+df_num.shape
+
+df_num['Year_Birth'].shape
